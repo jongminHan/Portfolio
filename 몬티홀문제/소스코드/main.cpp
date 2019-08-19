@@ -1,17 +1,26 @@
+﻿//////////////////////////////////////////////////////////////////////////////////////////////
+// Copyright © 2019 Jongmin Han
+// All rights reserved. No part of this code may be reproduced 
+// or used in any manner without written permission of the copyright owner.
+//
+// Email: jongmin.han17@gmail.com
+// github: github.com/jongminHan
+//////////////////////////////////////////////////////////////////////////////////////////////
 #include "Game.h"
 
 int main()
 {
-	// Create the game object
+	// 게임 오브젝트 생성
 	Game* game = new Game();
 
-	// Initialize and run the game
+	// 게임 초기화 후 실행
 	if (game->Init())
 	{
 		game->Run();
 	}
 
-	// Clean up
+	// 게임 오브젝트 제거
 	delete game;
+
 	return 0;
 }

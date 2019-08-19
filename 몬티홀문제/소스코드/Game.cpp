@@ -1,4 +1,4 @@
-#include "Game.h"
+﻿#include "Game.h"
 #include <unordered_map>
 
 
@@ -9,63 +9,74 @@ Game::Game()
 	, mbWin(false)
 	, mbIsPlaying(false)
 {
-	mDoorList.reserve(3);
 }
 
 Game::~Game()
 {
+
 }
 
 bool Game::Init()
 {
-	mWindow.create(sf::VideoMode(WIDTH, HEIGHT), "Monty Hall Problem Simulator");
-	mGui = std::make_shared<tgui::Gui>(mWindow); // Create the gui and attach it to the window
 
+	// 닫힌 문 텍스쳐 가져오기
 	if (!mClosedDoorTexture.loadFromFile("resources/closedDoor.png"))
 	{
 		std::cout << "Cannot load image\n";
 		return false;
 	}
 
+	// 염소 텍스쳐 가져오기
 	if (!mGoatDoorTexture.loadFromFile("resources/goatDoor.png"))
 	{
 		std::cout << "Cannot load image\n";
 		return false;
 	}
 
+	// 자동차 텍스쳐 가져오기
 	if (!mCarDoorTexture.loadFromFile("resources/carDoor.png"))
 	{
 		std::cout << "Cannot load image\n";
 		return false;
 	}
 
-	// Load the text font
+	// 폰트 가져오기
 	if (!mFont.loadFromFile("resources/sansation.ttf"))
 	{
 		std::cout << "Cannot load font\n";
 		return false;
 	}
 
-	// Initialize the start message
+	// 윈도우 생성
+	mWindow.create(sf::VideoMode(WIDTH, HEIGHT), "Monty Hall Problem Simulator");
+
+	// GUI 생성
+	mGui = std::make_shared<tgui::Gui>(mWindow);
+
+	// 시작 메시지 초기화
 	mStartMessage.setFont(mFont);
 	mStartMessage.setCharacterSize(40);
 	mStartMessage.setPosition(170.f, 150.f);
 	mStartMessage.setFillColor(sf::Color::Black);
 	mStartMessage.setString("This is Monty Hall Problem simulator.\n(Press any key to continue.)");
 
-	// Initialize three doors
-	mDoorList.push_back(std::make_shared<Door>(mClosedDoorTexture)); 
-	mDoorList.push_back(std::make_shared<Door>(mClosedDoorTexture));
-	mDoorList.push_back(std::make_shared<Door>(mClosedDoorTexture));
+	// 문을 저장할 메모리 예약
+	mDoorList.reserve(3);
 
+	// 문 3개 초기화
+	mDoorList.push_back(std::make_shared<Door>(mClosedDoorTexture));
+	mDoorList.push_back(std::make_shared<Door>(mClosedDoorTexture));
+	mDoorList.push_back(std::make_shared<Door>(mClosedDoorTexture));
 
 	mDoorList[0]->setPosition(150, 160);
 	mDoorList[1]->setPosition(500, 160);
 	mDoorList[2]->setPosition(850, 160);
 
+	// seed값 생성
 	std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
-	mDoorList[rand() % 3]->SetCar(true); // True for car. False for goat.
+	// 무작위로 한 개의 문을 선택 후 자동차 넣기. 나머지 문 두 개는 염소 넣기.
+	mDoorList[rand() % 3]->SetCar(true);
 
 	return true;
 }
@@ -78,6 +89,9 @@ void Game::Run()
 		(*iter)->connect("Clicked", &Game::SignalHandler, this, *iter);
 	}
 	
+	// 출력할 메시지: Run simulation {ComboBox} times. And {ComboBox}
+
+	// 텍스트 레이블 생성 
 	tgui::Label::Ptr label1 = tgui::Label::create();
 	label1->setText("Run simulation");
 	label1->setSize(167.2, 48);
@@ -86,6 +100,7 @@ void Game::Run()
 
 	mGui->add(label1);
 
+	// 텍스트 레이블 생성 
 	tgui::Label::Ptr label2 = tgui::Label::create();
 	label2->setText("times.    And");
 	label2->setSize(127.2, 38);
@@ -94,6 +109,7 @@ void Game::Run()
 
 	mGui->add(label2);
 
+	// 자동차 선택 축하 메시지를 출력하는 레이블
 	tgui::Label::Ptr winMessage = tgui::Label::create();
 	winMessage->setText("");
 	winMessage->setSize(387.2, 46.5575);
@@ -102,7 +118,7 @@ void Game::Run()
 
 	mGui->add(winMessage);
 
-
+	// 시뮬레이션을 반복할 횟수를 결정
 	tgui::ComboBox::Ptr repeatNumBox = tgui::ComboBox::create();
 	repeatNumBox->addItem("10");
 	repeatNumBox->addItem("50");
@@ -113,6 +129,7 @@ void Game::Run()
 	repeatNumBox->setSize(160, 22);
 	repeatNumBox->setTextSize(18);
 
+	// 선택을 유지할지, 바꿀지를 결정
 	tgui::ComboBox::Ptr choiceBox = tgui::ComboBox::create();
 	choiceBox->addItem("Keep the choice.");
 	choiceBox->addItem("Change the choice.");
@@ -123,6 +140,7 @@ void Game::Run()
 	mGui->add(repeatNumBox);
 	mGui->add(choiceBox);
 
+	// 자동차 선택 횟수 출력
 	tgui::Label::Ptr carLabel = tgui::Label::create();
 	carLabel->setText("Car: " + std::to_string(mCarNumber));
 	carLabel->setPosition(930, 560);
@@ -131,6 +149,7 @@ void Game::Run()
 
 	mGui->add(carLabel);
 
+	// 염소 선택 횟수 출력
 	tgui::Label::Ptr goatLabel = tgui::Label::create();
 	goatLabel->setText("Goat: " + std::to_string(mGoatNumber));
 	goatLabel->setPosition(930, 590);
@@ -139,6 +158,7 @@ void Game::Run()
 
 	mGui->add(goatLabel);
 
+	// 실행 버튼
 	tgui::Button::Ptr runButton = tgui::Button::create();
 	runButton->setText("RUN");
 	runButton->setPosition(270, 620);
@@ -149,6 +169,7 @@ void Game::Run()
 
 	runButton->connect("Clicked", &Game::RunSignal, this, repeatNumBox, choiceBox, winMessage, carLabel, goatLabel);
 
+	// 키보드가 눌러진 횟수를 저장
 	int keyPressCounter = 0;
 	while (mWindow.isOpen())
 	{
@@ -160,7 +181,7 @@ void Game::Run()
 				mWindow.close();
 			}
 
-			// Space key pressed: play
+			// 키보드 버튼 입력 횟수에 따른 튜토리얼 메시지 출력.
 			if (event.type == sf::Event::KeyPressed)
 			{
 				keyPressCounter++;
@@ -191,17 +212,20 @@ void Game::Run()
 				}
 			}
 
-			if (mbIsPlaying) // If game is not started yet, then don't pass the event to the widgets.
+			// 게임이 시작되기 전에는 event를 위젯에 전달하지 않는다.
+			if (mbIsPlaying)
 			{
-				mGui->handleEvent(event); // Pass the event to the widgets
+				mGui->handleEvent(event);
 			}
 		}
 
-		if (mClickNumber == 0)  // Remove the text when the game restarts.
+		// 게임을 재시작할 경우 텍스트 메시지를 삭제한다.
+		if (mClickNumber == 0)
 		{
 			winMessage->setText("");
 		}
 
+		// 자동차를 얻었는지, 염소를 얻었는지 알려주는 메시지를 출력한다.
 		if (mClickNumber == 2)
 		{
 			if (mbWin)
@@ -219,7 +243,7 @@ void Game::Run()
 		mWindow.clear(sf::Color::White);
 		if (mbIsPlaying)
 		{
-			mGui->draw(); // Draw all widgets
+			mGui->draw(); // 모든 위젯을 그린다.
 		}
 		else
 		{
@@ -233,6 +257,7 @@ void Game::Restart()
 {
 	mClickNumber = 0;
 
+	// 모든 문의 속성을 초기화한다.
 	for (auto iter = mDoorList.begin(); iter != mDoorList.end(); iter++)
 	{
 		(*iter)->getRenderer()->setTexture(mClosedDoorTexture);
@@ -242,7 +267,8 @@ void Game::Restart()
 	}
 	mbWin = false;
 
-	mDoorList[rand() % 3]->SetCar(true); // True for car. False for goat.
+	// 3개의 문 중 하나를 무작위로 선택해 자동차를 넣는다. 나머지 두 개의 문은 염소를 넣는다.
+	mDoorList[rand() % 3]->SetCar(true);
 }
 
 
@@ -254,30 +280,35 @@ void Game::SignalHandler(std::shared_ptr<Door> door)
 	{
 	case 1:
 		door->SetClicked(true);
-		// Step1: Show one door which has a goat.
+
+		// 1단계: 염소가 있는 문을 열어준다.
 		for (auto iter = mDoorList.begin(); iter != mDoorList.end(); iter++)
 		{
-			if (!(*iter)->IsClicked() && !(*iter)->IsCar()) // If the door wasn't clicked and doesn't have a car, then open this door.
+			// 클릭되지 않았고, 염소가 있는 문이라면 열어준다.
+			if (!(*iter)->IsClicked() && !(*iter)->IsCar())
 			{
 				(*iter)->getRenderer()->setTexture(mGoatDoorTexture);
-				(*iter)->setEnabled(false); // Disable the door.
+
+				// 열린 문을 비활성화한다.
+				(*iter)->setEnabled(false); 
 				break;
 			}
 		}
 		break;
 	case 2:
-		// Step2: Make final decision
-		if (door->IsCar()) // If the door has a car, then you won.
+		// 2단계: 최종 선택을 내린다.
+		if (door->IsCar()) // 최종 선택한 문에 자동차가 있었다면, 승리.
 		{
 			mbWin = true;
 			mCarNumber++;
 		}
-		else  // If the door has a goat, the you lost.
+		else  // 최종 선택한 문에 염소가 있었다면, 패배.
 		{
 			mGoatNumber++; 
 		}
 
-		for (auto iter = mDoorList.begin(); iter != mDoorList.end(); iter++) // Open every door.
+		// 모든 문을 열어준다.
+		for (auto iter = mDoorList.begin(); iter != mDoorList.end(); iter++)
 		{
 			if ((*iter)->IsCar())
 			{
@@ -289,7 +320,7 @@ void Game::SignalHandler(std::shared_ptr<Door> door)
 				(*iter)->getRenderer()->setTexture(mGoatDoorTexture);
 			}
 			(*iter)->SetOpen(true);
-			(*iter)->setEnabled(true); // Enable every door.
+			(*iter)->setEnabled(true); // 모든 문을 활성화한다
 		}
 		break;
 	case 3:
@@ -300,36 +331,41 @@ void Game::SignalHandler(std::shared_ptr<Door> door)
 
 void Game::RunSignal(tgui::ComboBox::Ptr repeat, tgui::ComboBox::Ptr choice, tgui::Label::Ptr winMessage, tgui::Label::Ptr carLabel, tgui::Label::Ptr goatLabel)
 {
-	if (repeat->getSelectedItem() == "" || choice->getSelectedItem() == "") // If the items were not selected correctly, then do nothing.
+	// 콤보박스가 제대로 선택되지 않았다면, 아무것도 하지 않는다.
+	if (repeat->getSelectedItem() == "" || choice->getSelectedItem() == "")
 	{
-		std::cout << "Do nothing\n";
 		return;
 	}
 
-	int repeatNum = std::stoi(repeat->getSelectedItem().toAnsiString());  // Convert string to int
+	// 콤보박스로부터 전달받은 string을 int로 변환한다.
+	int repeatNum = std::stoi(repeat->getSelectedItem().toAnsiString()); 
 
 	for (int i = 0; i < repeatNum; i++)
 	{
-		// Step1: Choose one door randomly.
+
+		// 1단계: 문 하나를 무작위로 선택한다.
 		mDoorList[rand() % 3]->SetClicked(true);
 
 
-		// Step2: Show one door which has a goat.
+		// 2단계: 염소가 있는 문을 하나 열어준다.
 		for (auto iter = mDoorList.begin(); iter != mDoorList.end(); iter++)
 		{
-			if (!(*iter)->IsClicked() && !(*iter)->IsCar()) // If the door wasn't clicked and doesn't have a car, then open this door.
+			// 클릭되지 않았고, 염소가 있는 문이라면 열어준다.
+			if (!(*iter)->IsClicked() && !(*iter)->IsCar())
 			{
 				(*iter)->getRenderer()->setTexture(mGoatDoorTexture);
 				(*iter)->SetOpen(true);
-				(*iter)->setEnabled(false); // Disable the door.
+
+				// 열린 문을 비활성화한다.
+				(*iter)->setEnabled(false);
 				break;
 			}
 		}
 
-		// Step3: Make final decision depend on the choice.
+		// 3단계: choice 콤보박스의 옵션에 따라, 최종 결정을 내린다.
 		switch (choice->getSelectedItemIndex())
 		{
-		case 0: // Keep the choice.
+		case 0: // Keep the choice.를 선택했을 경우
 			for (auto iter = mDoorList.begin(); iter != mDoorList.end(); iter++)
 			{
 				if ((*iter)->IsClicked())
@@ -347,7 +383,7 @@ void Game::RunSignal(tgui::ComboBox::Ptr repeat, tgui::ComboBox::Ptr choice, tgu
 				}
 			}
 			break;
-		case 1: // Change the choice.
+		case 1: // Change the choice.를 선택했을 경우
 			for (auto iter = mDoorList.begin(); iter != mDoorList.end(); iter++)
 			{
 				if (!(*iter)->IsOpened() && !(*iter)->IsClicked())
@@ -367,7 +403,8 @@ void Game::RunSignal(tgui::ComboBox::Ptr repeat, tgui::ComboBox::Ptr choice, tgu
 			break;
 		}
 
-		for (auto iter = mDoorList.begin(); iter != mDoorList.end(); iter++) // Open every door.
+		// 모든 문을 열어준다.
+		for (auto iter = mDoorList.begin(); iter != mDoorList.end(); iter++)
 		{
 			if ((*iter)->IsCar())
 			{
@@ -379,9 +416,15 @@ void Game::RunSignal(tgui::ComboBox::Ptr repeat, tgui::ComboBox::Ptr choice, tgu
 				(*iter)->getRenderer()->setTexture(mGoatDoorTexture);
 			}
 			(*iter)->SetOpen(true);
-			(*iter)->setEnabled(true); // Enable every door.
+
+			// 모든 문을 활성화한다.
+			(*iter)->setEnabled(true);
 		}
 
+		// 승리했을 시 자동차 획득 메시지 출력
+		// 패배했을 시 염소 획득 메시지 출력
+		// 지금까지 얻은 자동차, 염소의 수를 출력
+		// 자동차의 비율과 염소의 비율을 출력
 		if (mbWin)
 		{
 			winMessage->setText("You won a car!\nClick any door to restart the game.");
@@ -395,9 +438,10 @@ void Game::RunSignal(tgui::ComboBox::Ptr repeat, tgui::ComboBox::Ptr choice, tgu
 		}
 
 		mWindow.clear(sf::Color::White);
-		mGui->draw(); // Draw all widgets
+		mGui->draw();
 		mWindow.display();
 
+		// 게임 재시작
 		Restart();
 	}
 }
