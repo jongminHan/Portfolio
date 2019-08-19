@@ -1,12 +1,10 @@
 #include "HelperFunctions.h"
 
 
-// START: Generate random number
 int GenRandNum(int maxLimit)
 {
 	return rand() % maxLimit;
 }
-// END: Generate random number
 
 
 bool UsedInRow(int grid[9][9], int row, int num)
@@ -55,5 +53,3 @@ bool IsSafe(int grid[9][9], int row, int col, int num)
 {
 	return !UsedInRow(grid, row, num) && !UsedInCol(grid, col, num) && !UsedInBox(grid, row - row % 3, col - col % 3, num);
 }
-
-// END: Helper functions for solving mGrid

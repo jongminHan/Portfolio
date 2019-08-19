@@ -1,27 +1,22 @@
-#include "Sudoku.h"
+﻿#include "Sudoku.h"
 
-
-// START: Intialising
 Sudoku::Sudoku()
 {
-
-	// Randomly shuffling the array of removing mGrid positions
+	// 81개의 격자 위치를 무작위로 섞음
 	for (int i = 0; i < 81; i++)
 	{
 		mGridPos[i] = i;
 	}
-
 	std::random_shuffle(mGridPos, mGridPos + 81, GenRandNum);
 
-	// Randomly shuffling the guessing number array
+	// 1에서부터 9까지의 숫자를 무작위로 섞음
 	for (int i = 0; i < 9; i++)
 	{
 		mGuessNum[i] = i + 1;
 	}
-
 	std::random_shuffle(mGuessNum, mGuessNum + 9, GenRandNum);
 
-	// Initialising the mGrid
+	// 격자를 초기화
 	for (int i = 0; i < 9; i++)
 	{
 		for (int j = 0; j < 9; j++)
@@ -31,14 +26,12 @@ Sudoku::Sudoku()
 	}
 
 }
-// END: Initialising
 
-// START: Create seed mGrid
 void Sudoku::CreateSeed()
 {
-	SolveGrid();
+	SolveGridRecursive(); // 꽉찬 스도쿠를 생성
 
-	// Saving the solution mGrid
+	// 꽉찬 스도쿠를 솔루션에 저장
 	for (int i = 0; i < 9; i++)
 	{
 		for (int j = 0; j < 9; j++)
@@ -47,34 +40,7 @@ void Sudoku::CreateSeed()
 		}
 	}
 }
-// END: Create seed mGrid
 
-
-// START: Printing the mGrid
-void Sudoku::PrintGrid()
-{
-	for (int i = 0; i < 9; i++)
-	{
-		for (int j = 0; j < 9; j++)
-		{
-			if (mGrid[i][j] == 0)
-			{
-				std::cout << ".";
-			}
-			else
-			{
-				std::cout << mGrid[i][j];
-			}
-			std::cout << "|";
-		}
-		std::cout << std::endl;
-	}
-
-}
-// END: Printing the mGrid
-
-
-// START: Helper functions for solving mGrid
 bool Sudoku::FindUnassignedLocation(int grid[9][9], int& row, int& col)
 {
 	for (row = 0; row < 9; row++)
@@ -101,45 +67,40 @@ int Sudoku::GetSolutionGrid(int row, int col)
 	return mSolnGrid[row][col];
 }
 
-// START: Modified and improved Sudoku solver
-bool Sudoku::SolveGrid()
+bool Sudoku::SolveGridRecursive()
 {
 	int row, col;
 
-	// If there is no unassigned location, we are done
+	// 비어있는 공간이 없으면 스도쿠 풀기 완료.
 	if (!FindUnassignedLocation(mGrid, row, col))
 	{
-		return true; // success!
+		return true; // 성공!
 	}
 
-	// Consider digits 1 to 9
+	// 1에서부터 9까지의 숫자를 하나하나 대입
 	for (int num = 0; num < 9; num++)
 	{
-		// if looks promising
+		// 입력한 숫자가 '일단' 안전해보일 경우
 		if (IsSafe(mGrid, row, col, mGuessNum[num]))
 		{
-			// make tentative assignment
+			// 잠정적인 대입
 			mGrid[row][col] = mGuessNum[num];
 
-			// return, if success, yay!
-			if (SolveGrid())
+			// 올바른 해법이라면 true 반환
+			if (SolveGridRecursive()) // 재귀
 			{
 				return true;
 			}
 
-			// failure, unmake & try again
+			// 올바른 해법이 아니라면, 해당 숫자를 제거하고 다시 시도
 			mGrid[row][col] = UNASSIGNED;
 		}
 	}
 
-	return false; // this triggers backtracking
-
+	return false; // backtracking을 유도하는 지점
 }
-// END: Modified and improved Sudoku Solver
 
-
-// START: Check if the mGrid is uniquely solvable
-void Sudoku::CountSoln(int& number)
+void Sudoku::CountSolnRecursive(int& number)
 {
 	int row, col;
 
@@ -155,34 +116,28 @@ void Sudoku::CountSoln(int& number)
 		if (IsSafe(mGrid, row, col, mGuessNum[i]))
 		{
 			mGrid[row][col] = mGuessNum[i];
-			CountSoln(number);
+			CountSolnRecursive(number);
 		}
 
 		mGrid[row][col] = UNASSIGNED;
 	}
-
 }
-// END: Check if the mGrid is uniquely solvable
 
-
-// START: Gneerate puzzle
 void Sudoku::GenPuzzle()
 {
 	for (int i = 0; i < 81; i++)
 	{
 		int x = mGridPos[i] / 9;
 		int y = mGridPos[i] % 9;
-		int temp = mGrid[x][y];
-		mGrid[x][y] = UNASSIGNED;
+		int temp = mGrid[x][y];  // x행, y열의 숫자를 temp에 저장
+		mGrid[x][y] = UNASSIGNED; // x행, y열을 unassign한다.
 
-		// If now more than 1 solution , replace the removed cell back.
+		// 2개 이상의  해법이 있을 경우, temp를 재입력
 		int check = 0;
-		CountSoln(check);
+		CountSolnRecursive(check);
 		if (check != 1)
 		{
 			mGrid[x][y] = temp;
 		}
 	}
-	std::cout << std::endl;
 }
-// END: Generate puzzle

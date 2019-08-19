@@ -1,19 +1,20 @@
-#include "Game.h"
+﻿#include "Game.h"
 
 Game::Game()
 {
-	// Initialising seed for random number generation
+	// seed값 생성
 	srand(static_cast<unsigned int>(time(nullptr)));
 
-	// Creating an instance of Sudoku
+	// 스도쿠 오브젝트 생성
 	mSudoku = std::make_shared<Sudoku>();
 
-	// Creating a seed for puzzle generation
+	// 스도쿠 seed 생성
 	mSudoku->CreateSeed();
 
-	// Generating the puzzle
+	// 스도쿠 퍼즐 생성
 	mSudoku->GenPuzzle();
 
+	// mSudoku의 격자를 Game의 격자로 복사
 	for (int i = 0; i < 9; i++)
 	{
 		for (int j = 0; j < 9; j++)
@@ -23,30 +24,34 @@ Game::Game()
 	}
 }
 
-void Game::signalHandler(int row, int col, tgui::EditBox::Ptr editBox, tgui::Label::Ptr label)
+void Game::EditBoxSignalHandler(int row, int col, tgui::EditBox::Ptr editBox, tgui::Label::Ptr label)
 {
 	try
 	{
+		// editBox에 입력된 텍스트를 int로 변환. 변환이 불가능할 경우 예외 발생
 		int enteredNum = std::stoi(editBox->getText().toAnsiString());
 		
 
-		if (!IsSafe(mSudokuGrid, row, col, enteredNum)) // If the given number is not safe then,
+		// 입력된 값이 안전하지 않은 경우 경고 메시지 출력.
+		if (!IsSafe(mSudokuGrid, row, col, enteredNum)) 
 		{
 			label->setText("Warning!");
 			mSudokuGrid[row][col] = enteredNum;
 		}
-		else
+		else 
 		{
-			std::cout << "Safe\n";
 			mSudokuGrid[row][col] = enteredNum;
 		}
 	}
-	catch (std::invalid_argument)
+	catch (std::invalid_argument) // 예외처리: 유효하지 않은 값
 	{
-		if (editBox->getText().toAnsiString().size() == 0)  // Remove the assigned number when the number is deleted
+		// editBox의 내용이 삭제되었을 경우 해당 위치에 0을 입력
+		if (editBox->getText().toAnsiString().size() == 0)
 		{	
 			mSudokuGrid[row][col] = 0;
-			label->setText(""); // Remove the text
+
+			// 텍스트 제거
+			label->setText("");
 		}
 		return;
 	}
@@ -55,22 +60,27 @@ void Game::signalHandler(int row, int col, tgui::EditBox::Ptr editBox, tgui::Lab
 
 bool Game::Init()
 {
+	// 윈도우 생성
 	mWindow.create(sf::VideoMode(WIDTH, HEIGHT), "Sudoku!");
-	mGui = std::make_shared<tgui::Gui>(mWindow); // Create the gui and attach it to the window
 
-	
+	// GUI 생성
+	mGui = std::make_shared<tgui::Gui>(mWindow);
+
 	return true;
 }
 
 void Game::Run()
 {
-	tgui::Label::Ptr winLabel = tgui::Label::create();
-	winLabel->setPosition(720, 150);
-	winLabel->setSize(267.2f, 78.7863f);
-	winLabel->setTextSize(50);
-	winLabel->getRenderer()->setTextColor(tgui::Color::Red);
-	mGui->add(winLabel);
+	// 경고 메시지를 출력하는 레이블
+	tgui::Label::Ptr warningLabel = tgui::Label::create();
+	warningLabel->setPosition(720, 150);
+	warningLabel->setSize(267.2f, 78.7863f);
+	warningLabel->setTextSize(50);
+	warningLabel->getRenderer()->setTextColor(tgui::Color::Red);
+	mGui->add(warningLabel);
 
+
+	// 새 게임을 만드는 버튼
 	tgui::Button::Ptr newGameButton = tgui::Button::create();
 	newGameButton->setPosition(720, 520);
 	newGameButton->setSize(190.f, 69.6667f);
@@ -81,6 +91,7 @@ void Game::Run()
 
 	tgui::EditBox::Ptr editBox;
 
+	// 9 X 9 형태의 EditBox로 이루어진 격자 생성
 	for (int i = 0; i < 9; i++)
 	{
 		for (int j = 0; j < 9; j++)
@@ -92,7 +103,8 @@ void Game::Run()
 
 			int gridNum = mSudokuGrid[i][j];
 
-			if (gridNum != 0) // Show no number if the given number is zero.
+			// 현재 위치의 mSudokuGrid 값이 0이 아닐 경우 EditBox에 숫자 출력
+			if (gridNum != 0)
 			{
 				sf::String sfStr(std::to_string(gridNum));
 				editBox->setDefaultText(sfStr);
@@ -101,17 +113,21 @@ void Game::Run()
 
 			mSudokuEditBoxGrid[i * 9 + j] = editBox;
 			mGui->add(editBox);
-			editBox->connect("TextChanged", &Game::signalHandler, this, i, j, editBox, winLabel);
+			editBox->connect("TextChanged", &Game::EditBoxSignalHandler, this, i, j, editBox, warningLabel);
 		}
 	}
 
 
-	/////////////////////Child Window/////////////////////////////////////////
+	///////////////////// 자식 윈도우 /////////////////////
+	// 스도쿠를 풀었을 경우 팝업되는 윈도우
 	tgui::ChildWindow::Ptr winMessageWindow = tgui::ChildWindow::create();
 	winMessageWindow->setPosition(430, 170);
 	winMessageWindow->setSize(400, 300);
+
+	// 스도쿠를 풀기 전에는 보이지 않도록 설정
 	winMessageWindow->setVisible(false);
 
+	// 축하 메시지를 출력하는 레이블
 	tgui::Label::Ptr solvedPuzzleLabel = tgui::Label::create();
 	solvedPuzzleLabel->setPosition(70, 100);
 	solvedPuzzleLabel->setSize(267.2f, 36.0645f);
@@ -119,19 +135,26 @@ void Game::Run()
 	solvedPuzzleLabel->setTextSize(20);
 	solvedPuzzleLabel->setHorizontalAlignment(tgui::Label::HorizontalAlignment::Center);
 	
-	winMessageWindow->add(solvedPuzzleLabel);  // Add label to child window.
 
-	tgui::Button::Ptr newGameButton2 = tgui::Button::create(); // New Game button inside child window.
+	// 축하 메시지 레이블을 자식 윈도우에 추가
+	winMessageWindow->add(solvedPuzzleLabel);
+
+	// 새 게임 시작 버튼
+	tgui::Button::Ptr newGameButton2 = tgui::Button::create(); 
 	newGameButton2->setPosition(160, 170);
 	newGameButton2->setSize(80.f, 29.3333f);
 	newGameButton2->setText("New Game");
 	newGameButton2->setTextSize(13);
 	newGameButton2->connect("pressed", &Game::CreateNewGameSignalFromChild, this, winMessageWindow);
-	winMessageWindow->add(newGameButton2); // Add button to child window.
+
+	// 새 게임 시작 버튼을 자식 윈도우에 추가
+	winMessageWindow->add(newGameButton2);
 
 	mGui->add(winMessageWindow);
-	/////////////////////Child Window/////////////////////////////////////////
+	///////////////////// 자식 윈도우 /////////////////////
 
+
+	// 9 X 9 격자를 9개의 상자로 나눠주는 4개의 빨간 선
 	sf::Vertex line1[2];
 	line1[0].position = sf::Vector2f(150, 235);
 	line1[0].color = sf::Color::Red;
@@ -166,11 +189,12 @@ void Game::Run()
 				mWindow.close();
 			}
 
-			mGui->handleEvent(event); // Pass the event to the widgets
+			// event를 위젯에 전달
+			mGui->handleEvent(event);
 		}
 
-		bool isSolved = true;
-
+		// mSudoku의 솔루션과 Game의 mSudokuGrid의 값이 하나라도 다르면 문제를 못푼 것으로 간주
+		bool isSolved = true; 
 		for (int i = 0; i < 9; i++)
 		{
 			for (int j = 0; j < 9; j++)
@@ -182,8 +206,8 @@ void Game::Run()
 			}
 		}
 
-		
-		if (isSolved) // If the puzzle was solved, then show child window.
+		// 문제가 풀렸을 경우, 자식 윈도우를 보여줌.
+		if (isSolved)
 		{
 			winMessageWindow->setVisible(true);
 		}
@@ -193,21 +217,20 @@ void Game::Run()
 		mWindow.draw(line2, 2, sf::Lines);
 		mWindow.draw(line3, 2, sf::Lines);
 		mWindow.draw(line4, 2, sf::Lines);
-		mGui->draw(); // Draw all widgets
-		
+		mGui->draw();
 		mWindow.display();
 	}
 }
 
 void Game::CreateNewGameSignal()
 {
-	// Creating an new instance of Sudoku
+	// 스도쿠 오브젝트를 새로 생성
 	mSudoku = std::make_shared<Sudoku>();
 
-	// Creating a new seed for puzzle generation
+	// 스도쿠 seed 생성
 	mSudoku->CreateSeed();
 
-	// Generating the puzzle
+	// 스도쿠 퍼즐 생성
 	mSudoku->GenPuzzle();
 
 	for (int i = 0; i < 9; i++)
@@ -224,12 +247,13 @@ void Game::CreateNewGameSignal()
 		{
 			int gridNum = mSudokuGrid[i][j];
 
-			if (gridNum == 0) // Show no number if the given number is zero.
+			// 현재 값이 0일 경우 텍스트를 출력하지 않음
+			if (gridNum == 0)
 			{
 				mSudokuEditBoxGrid[i * 9 + j]->setDefaultText("");
 				mSudokuEditBoxGrid[i * 9 + j]->setEnabled(true);
 			}
-			else 
+			else // 0 이외의 값일 경우 그 숫자를 출력
 			{
 				sf::String sfStr(std::to_string(gridNum));
 				mSudokuEditBoxGrid[i * 9 + j]->setDefaultText(sfStr);
@@ -243,5 +267,6 @@ void Game::CreateNewGameSignalFromChild(tgui::ChildWindow::Ptr childWindow)
 {
 	CreateNewGameSignal();
 
-	childWindow->setVisible(false); // Remove a childWindow from screen.
+	// 새 게임 버튼이 클릭되었으므로 자식 윈도우를 비활성화
+	childWindow->setVisible(false); 
 }
