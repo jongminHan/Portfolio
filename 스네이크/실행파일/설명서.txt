@@ -1,0 +1,12 @@
+이 게임은 게임패드를 연결해야 플레이할 수 있습니다.
+
+
+
+* OpenAl32.dll 오류 해결법
+
+1) OpenAl의 다운로드 페이지로 간다. 
+https://www.openal.org/downloads/
+
+2) OpenAL Windows Installer 를 다운로드 받는다.
+
+3) 압축해제 후 인스톨 파일을 실행시켜 OpenAl을 설치한다.
